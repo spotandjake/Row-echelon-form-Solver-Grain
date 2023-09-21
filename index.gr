@@ -1,0 +1,97 @@
+// Solves row echelon form
+
+module Main
+
+include "number"
+include "buffer"
+include "array"
+
+let array_fill = (i, n, v) => {
+  let mut a = [>]
+  let mut i = i
+  for (; i < n; i += 1) {
+    a = Array.append(a, [> v])
+  }
+  a
+}
+
+/**
+ * Gaussian elimination
+ * @param matrix: array A matrix
+ * @returns array x solution vector
+ */
+let gauss = matrix => {
+  let n = Array.length(matrix)
+  for (let mut i = 0; i < n; i += 1) {
+    // Search for maximum in this column
+    let mut maxEl = Number.abs(matrix[i][i])
+    let mut maxRow = i
+    for (let mut k = i + 1; k < n; k += 1) {
+      if (Number.abs(matrix[k][i]) > maxEl) {
+        maxEl = Number.abs(matrix[k][i])
+        maxRow = k
+      }
+    }
+    // Swap maximum row with current row (column by column)
+    for (let mut k = i; k < n + 1; k += 1) {
+      let tmp = matrix[maxRow][k]
+      matrix[maxRow][k] = matrix[i][k]
+      matrix[i][k] = tmp
+    }
+    // Make all rows below this one 0 in current column
+    for (let mut k = i + 1; k < n; k += 1) {
+      let c = -1 * matrix[k][i] / matrix[i][i]
+      for (let mut j = i; j < n + 1; j += 1) {
+        if (i == j) {
+          matrix[k][j] = 0
+        } else {
+          matrix[k][j] = matrix[k][j] + c * matrix[i][j]
+        }
+      }
+    }
+  }
+  // Solve equation Ax=b for an upper triangular matrix A
+  let x = array_fill(0, n, 0)
+  for (let mut i = n - 1; i > -1; i -= 1) {
+    x[i] = matrix[i][n] / matrix[i][i]
+    print(i)
+    for (let mut k = i - 1; k > -1; k -= 1) {
+      matrix[k][n] = matrix[k][n] - matrix[k][i] * x[i]
+    }
+  }
+  x
+}
+
+//formatter-ignore
+let matrix = [>
+  [> 1, 1, -2, -2],
+  [> 0, 1,  3,  7],
+  [> 1, 0, -1, -1]
+]
+// Print Equation
+print("Solving Equation: ")
+Array.forEach(row => {
+  let str = Buffer.make(0)
+  let mut started = false
+  Array.forEachi((e, i) => {
+    if (i < Array.length(row) - 1) {
+      if (started && e != 0) {
+        if (e < 0) Buffer.addString("- ", str) else Buffer.addString("+ ", str)
+      }
+      if (e != 0) {
+        started = true
+        if (e != 1) Buffer.addString(toString(Number.abs(e)), str)
+        Buffer.addString("x" ++ toString(i), str)
+        Buffer.addChar(' ', str)
+      }
+    }
+  }, row)
+  Buffer.addString("= ", str)
+  Buffer.addString(toString(row[Array.length(row) - 1]), str)
+  print(Buffer.toString(str))
+}, matrix)
+print("Solution: ")
+let result = gauss(matrix)
+Array.forEachi((e, i) => {
+  print("x" ++ toString(i + 1) ++ " = " ++ toString(e))
+}, result)
